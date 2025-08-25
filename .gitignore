@@ -137,3 +137,9 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+<<<<<<< HEAD
+=======
+
+# Baileys folders
+auth_info/
+>>>>>>> cdf38b7 (commit before works)
