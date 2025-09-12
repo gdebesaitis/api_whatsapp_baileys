@@ -5,11 +5,14 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import multer from 'multer';
 
 const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion, DisconnectReason } = pkg;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+const upload = multer({ dest: 'uploads/'});
 
 const app = express();
 app.use(express.json());
@@ -237,8 +240,8 @@ app.post('/mensagem/:sessao', async (req, res) => {
 });
 
 // 🔹 Enviar arquivos
-app.post('/arquivo/:sessao', async (req, res) => {
-    const { numero, arquivos = [], legenda } = req.body;
+app.post('/arquivo/:sessao', upload.array('arquivos'),  async (req, res) => {
+    const { numero, legenda } = req.body;
     const nomeSessao = req.params.sessao;
     
     if (!numero) {
@@ -252,19 +255,20 @@ app.post('/arquivo/:sessao', async (req, res) => {
     const enviados = [];
 
     try {
-        for (const arquivo of arquivos) {
-            if (!fs.existsSync(arquivo)) continue;
+        for (const arquivo of req.files) {
+            //if (!fs.existsSync(arquivo)) continue;
             
-            const buffer = fs.readFileSync(arquivo);
-            const fileName = path.basename(arquivo);
+            const buffer = fs.readFileSync(arquivo.path);
+            const fileName = arquivo.originalname;
             
             await sock.sendMessage(jid, { 
                 document: buffer, 
                 fileName: fileName,
-                mimetype: 'application/octet-stream'
+                mimetype: arquivo.mimetype || 'application/octet-stream'
             });
             
             enviados.push(fileName);
+            fs.unlinkSync(arquivo.path);
         }
         
         if (legenda) {
